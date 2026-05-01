@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Q1 Mutatie Les 3 - Politie Academie</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root { --primary: #003082; --secondary: #f0f2f5; --accent: #d32f2f; --white: #ffffff; --dark: #1c2b4b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--secondary); margin: 0; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        #main-nav { background: var(--primary); padding: 10px; display: none; justify-content: center; flex-wrap: wrap; gap: 8px; z-index: 2000; border-bottom: 3px solid #d4af37; }
+        .nav-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em; }
+        .nav-btn.active { background: var(--white); color: var(--primary); }
+
+        .screen { flex-grow: 1; display: none; width: 100%; height: calc(100vh - 60px); position: relative; overflow: hidden; }
+        .screen.active { display: flex; flex-direction: column; }
+
+        .board-container { position: relative; flex: 1; background-size: contain; background-repeat: no-repeat; background-position: center; background-color: #fff; }
+        .drawing-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 500; pointer-events: none; }
+        .drawing-canvas.active { pointer-events: auto; cursor: crosshair; }
+        .drag-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; }
+        
+        .draggable-label { 
+            position: absolute; background: var(--white); border: 2px solid var(--primary); 
+            padding: 6px 10px; border-radius: 4px; cursor: grab; font-weight: bold; 
+            pointer-events: auto; box-shadow: 2px 2px 5px rgba(0,0,0,0.2); white-space: nowrap; touch-action: none; z-index: 1001;
+        }
+
+        .content-container { padding: 25px; max-width: 800px; margin: 10px auto; background: var(--white); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow-y: auto; }
+        .control-panel { background: var(--white); padding: 8px; display: flex; justify-content: center; gap: 8px; border-top: 1px solid #ddd; z-index: 1500; }
+        .btn-action { padding: 8px 15px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; }
+
+        #screen-login { display: flex; justify-content: center; align-items: center; background: var(--dark); height: 100vh; width: 100%; position: absolute; z-index: 3000; }
+        .login-box { background: var(--white); padding: 30px; border-radius: 15px; text-align: center; width: 350px; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        
+        .live-feed { flex: 1; overflow-y: auto; padding: 15px; background: #eee; }
+        .mutation-card { background: white; padding: 10px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid var(--primary); }
+        .feedback-area { background: #fffde7; border: 1px dashed #fbc02d; padding: 5px; margin-top: 5px; font-size: 0.9em; min-height: 20px; }
+
+        .pen-active { background: #4caf50 !important; color: white !important; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+
+    <nav id="main-nav">
+        <button class="nav-btn" onclick="showScreen(2)">1. Instructie</button>
+        <button class="nav-btn" onclick="showScreen(3)">2. Digibord</button>
+        <button class="nav-btn" onclick="showScreen(4)">3. Oefening</button>
+        <button class="nav-btn" onclick="showScreen(5)">4. PV & VD</button>
+        <button class="nav-btn" onclick="showScreen(6)">5. ASTMA</button>
+        <button class="nav-btn" onclick="showScreen(7)">6. Live Mutatie</button>
+    </nav>
+
+    <!-- Scherm 1: Login -->
+    <div id="screen-1" class="screen active">
+        <div id="screen-login">
+            <div class="login-box">
+                <h2 style="color: var(--primary);">Les 3: Muteren</h2>
+                <input type="text" id="studentName" placeholder="Naam...">
+                <select id="classSelect">
+                    <option value="" disabled selected>Kies een klas...</option>
+                    <option value="Offline-Modus">Offline Modus</option>
+                </select>
+                <textarea id="secretInput" placeholder="Typ hier een zin voor het digibord (Scherm 3)..."></textarea>
+                <button onclick="sendToBoard()" style="background:#666; color:white; border:none; padding:10px; width:100%; border-radius:6px; cursor:pointer;">Stuur naar Scherm 3</button>
+                <button onclick="login()" style="background:var(--primary); color:white; border:none; padding:15px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px;">Start Training</button>
+                <button onclick="resetDatabase()" style="background:var(--accent); color:white; border:none; padding:10px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:20px; font-size: 0.8em;">WIS LOKALE OPSLAG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schermen 2 t/m 7 blijven exact hetzelfde als in jouw origineel -->
+    <div id="screen-2" class="screen">
+        <div class="content-container">
+            <h2>Instructie: Onvoltooid Verleden Tijd (OVT)</h2>
+            <h3>Zoek de persoonsvorm</h3>
+            <p style="color: var(--primary); font-weight: bold;">
+                De verdachte <span style="color: var(--accent);">is</span> direct <span style="color: var(--accent);">gevlucht</span>.
+            </p>
+            <h3>Zoek het gezegde</h3>
+            <p>Het tweede werkwoord in het gezegde is vaak een <strong>voltooid deelwoord</strong>.</p>
+            <hr>
+            <p><em>Voorbeeld:</em> "Ik <u>ben</u> naar het plein <u>gereden</u>."<br>
+            → <strong>OVT:</strong> "Ik reed naar het plein."</p>
+        </div>
+    </div>
+
+    <div id="screen-3" class="screen">
+        <div class="board-container" style="background-color: #f9f9f9;">
+            <canvas id="canvas-3" class="drawing-canvas"></canvas>
+            <div id="label-layer-3" class="drag-layer"></div>
+        </div>
+        <div class="control-panel">
+            <button class="btn-action" onclick="togglePen(3)" id="pen-btn-3">🖊️ Pen</button>
+            <button class="btn-action" onclick="clearDrawings(3)">🧹 Wis Tekening</button>
+            <button class="btn-action" onclick="clearBoard(3)" style="background:var(--accent); color:white;">🗑️ Wis Labels</button>
+        </div>
+    </div>
+
+    <div id="screen-4" class="screen">
+        <iframe src="https://learningapps.org/watch?v=pbsnzhgyn24"></iframe>
+    </div>
+
+    <div id="screen-5" class="screen">
+        <div class="board-container" style="background-image: url('Q3lesmaterialQ1les3.png');">
+            <canvas id="canvas-5" class="drawing-canvas"></canvas>
+            <div id="label-layer-5" class="drag-layer"></div>
+        </div>
+        <div class="control-panel">
+            <button class="btn-action" onclick="togglePen(5)" id="pen-btn-5">🖊️ Pen</button>
+            <button class="btn-action" onclick="spawnPVVD(5)" style="background:var(--primary); color:white;">Spawn PV / VD</button>
+            <button class="btn-action" onclick="spawnGezegde(5)" style="background:#4caf50; color:white;">Spawn Gezegde</button>
+            <button class="btn-action" onclick="clearBoard(5)">Wis Labels</button>
+        </div>
+    </div>
+
+    <div id="screen-6" class="screen">
+        <div class="board-container" style="background-image: url('Q3lesmaterialQ1les3.png');">
+            <canvas id="canvas-6" class="drawing-canvas"></canvas>
+            <div id="label-layer-6" class="drag-layer"></div>
+        </div>
+        <div class="control-panel">
+            <button class="btn-action" onclick="togglePen(6)" id="pen-btn-6">🖊️ Pen</button>
+            <button class="btn-action" onclick="spawnASTMA(6)" style="background:var(--primary); color:white;">Respawn ASTMA</button>
+            <button class="btn-action" onclick="clearBoard(6)">Wis Labels</button>
+        </div>
+    </div>
+
+    <div id="screen-7" class="screen">
+        <div style="height: 300px; background: #000; display: flex; justify-content: center;">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/BmEYOYBr1t8?end=23" frameborder="0" allowfullscreen></iframe>
+        </div>
+        <div style="background: #e9ecef; padding: 10px; margin: 10px; border-radius: 8px;">
+            <strong>OC-melding:</strong><br>
+            Ga naar het Regentesseplein in Den Haag. Daar worden fatbikes gecontroleerd. 
+        </div>
+        <div class="live-feed" id="liveFeed"></div>
+        <div style="padding: 10px; background: white; border-top: 2px solid var(--primary);">
+            <textarea id="mutationIn" rows="3" placeholder="Schrijf hier je mutatie (OVT)..." style="width: 100%; padding: 8px; margin-bottom: 8px;"></textarea>
+            <button onclick="postMutation()" style="width: 100%; padding: 10px; background: var(--primary); color: white; border: none; border-radius: 5px; font-weight: bold;">Lever mutatie in</button>
+        </div>
+    </div>
+
+    <script>
+        // LOKALE DATABASE EMULATIE (Vervangt Firebase)
+        let localDB = JSON.parse(localStorage.getItem('app_data')) || { labels: {}, drawings: {}, feed: {} };
+        
+        function saveDB() {
+            localStorage.setItem('app_data', JSON.stringify(localDB));
+            setupSync(); // Refresh de weergave
+        }
+
+        window.login = () => {
+            window.userName = document.getElementById('studentName').value || "Anoniem";
+            document.getElementById('screen-1').classList.remove('active');
+            document.getElementById('main-nav').style.display = 'flex';
+            window.showScreen(2);
+            setupSync();
+            setupDrawing();
+            setupGlobalDragEvents();
+        };
+
+        window.resetDatabase = () => {
+            if(confirm("Wil je alle opgeslagen data (tekeningen en labels) wissen?")) {
+                localStorage.removeItem('app_data');
+                location.reload();
+            }
+        };
+
+        window.showScreen = (n) => {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${n}`).classList.add('active');
+            document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', (i+2) === n);
+            });
+            if([3,5,6].includes(n)) resizeCanvas(n);
+        };
+
+        window.sendToBoard = () => {
+            const txt = document.getElementById('secretInput').value;
+            if(!txt.trim()) return;
+            const id = Date.now();
+            if(!localDB.labels.s3) localDB.labels.s3 = {};
+            localDB.labels.s3[id] = { text: txt, x: 100, y: 100 };
+            saveDB();
+            document.getElementById('secretInput').value = "";
+            alert("Tekst toegevoegd aan Scherm 3!");
+        };
+
+        // DRAG & DROP LOGICA
+        let draggingElement = null, dragSid = null, dragLid = null, dragOffset = { x: 0, y: 0 };
+        let penActive = { 3: false, 5: false, 6: false }, drawing = false;
+
+        function setupGlobalDragEvents() {
+            const onMove = (e) => {
+                if (!draggingElement) return;
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const newX = clientX - dragOffset.x;
+                const newY = clientY - dragOffset.y;
+                draggingElement.style.left = newX + 'px';
+                draggingElement.style.top = newY + 'px';
+            };
+            const onEnd = () => {
+                if (!draggingElement) return;
+                localDB.labels[`s${dragSid}`][dragLid].x = parseInt(draggingElement.style.left);
+                localDB.labels[`s${dragSid}`][dragLid].y = parseInt(draggingElement.style.top);
+                saveDB();
+                draggingElement = null;
+            };
+            window.addEventListener('mousemove', onMove); window.addEventListener('touchmove', onMove);
+            window.addEventListener('mouseup', onEnd); window.addEventListener('touchend', onEnd);
+        }
+
+        function createHTMLLabel(sid, lid, obj) {
+            const el = document.createElement('div');
+            el.className = 'draggable-label';
+            el.style.left = obj.x + 'px'; el.style.top = obj.y + 'px';
+            el.innerHTML = `<span>${obj.text}</span>`;
+            const startDrag = (e) => {
+                if (penActive[sid]) return;
+                draggingElement = el; dragSid = sid; dragLid = lid;
+                const rect = el.getBoundingClientRect();
+                let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                dragOffset.x = clientX - rect.left; dragOffset.y = clientY - rect.top;
+            };
+            el.addEventListener('mousedown', startDrag); el.addEventListener('touchstart', startDrag);
+            document.getElementById(`label-layer-${sid}`).appendChild(el);
+        }
+
+        // TEKEN LOGICA
+        function setupDrawing() {
+            [3, 5, 6].forEach(id => {
+                const canvas = document.getElementById(`canvas-${id}`);
+                const ctx = canvas.getContext('2d');
+                const draw = (e) => {
+                    if(!drawing || !penActive[id]) return;
+                    const rect = canvas.getBoundingClientRect();
+                    let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+                    let y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+                    ctx.lineTo(x, y); ctx.stroke();
+                };
+                canvas.onmousedown = canvas.ontouchstart = (e) => { 
+                    if(penActive[id]) { 
+                        drawing = true; ctx.beginPath(); 
+                        const rect = canvas.getBoundingClientRect();
+                        ctx.moveTo((e.touches ? e.touches[0].clientX : e.clientX) - rect.left, (e.touches ? e.touches[0].clientY : e.clientY) - rect.top);
+                    }
+                };
+                canvas.onmousemove = canvas.ontouchmove = draw;
+                window.addEventListener('mouseup', () => { 
+                    if(drawing) { 
+                        drawing = false; 
+                        localDB.drawings[`s${id}`] = canvas.toDataURL(); 
+                        saveDB(); 
+                    }
+                });
+            });
+        }
+
+        window.togglePen = (id) => {
+            penActive[id] = !penActive[id];
+            document.querySelectorAll('.btn-action').forEach(b => b.classList.remove('pen-active'));
+            if(penActive[id]) document.getElementById(`pen-btn-${id}`).classList.add('pen-active');
+            document.getElementById(`canvas-${id}`).classList.toggle('active', penActive[id]);
+        };
+
+        window.clearDrawings = (id) => {
+            const canvas = document.getElementById(`canvas-${id}`);
+            canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+            delete localDB.drawings[`s${id}`];
+            saveDB();
+        };
+
+        window.clearBoard = (id) => { localDB.labels[`s${id}`] = {}; saveDB(); };
+
+        window.spawnPVVD = (id) => {
+            localDB.labels[`s${id}`] = localDB.labels[`s${id}`] || {};
+            ["PV", "VD"].forEach((t, i) => { localDB.labels[`s${id}`][Date.now()+i] = { text: t, x: 50, y: 100 + (i*50) }; });
+            saveDB();
+        };
+
+        window.spawnGezegde = (id) => {
+            localDB.labels[`s${id}`] = localDB.labels[`s${id}`] || {};
+            localDB.labels[`s${id}`][Date.now()] = { text: "Gezegde", x: 50, y: 200 };
+            saveDB();
+        };
+
+        window.spawnASTMA = (id) => {
+            localDB.labels[`s${id}`] = localDB.labels[`s${id}`] || {};
+            ["Aanleiding", "Situatie", "Toedracht", "Maatregelen", "Afhandeling"].forEach((t, i) => {
+                localDB.labels[`s${id}`][Date.now()+i] = { text: t, x: 50, y: 80 + (i*50) };
+            });
+            saveDB();
+        };
+
+        window.postMutation = () => {
+            const txt = document.getElementById('mutationIn').value;
+            if(!txt.trim()) return;
+            localDB.feed[Date.now()] = { user: window.userName, text: txt.trim(), feedback: "", timestamp: Date.now() };
+            saveDB();
+            document.getElementById('mutationIn').value = "";
+        };
+
+        function setupSync() {
+            [3, 5, 6].forEach(id => {
+                const container = document.getElementById(`label-layer-${id}`);
+                if(container) {
+                    container.innerHTML = "";
+                    const labels = localDB.labels[`s${id}`] || {};
+                    Object.keys(labels).forEach(lid => createHTMLLabel(id, lid, labels[lid]));
+                }
+                const canvas = document.getElementById(`canvas-${id}`);
+                if(canvas && localDB.drawings[`s${id}`]) {
+                    const img = new Image();
+                    img.onload = () => { canvas.getContext('2d').drawImage(img,0,0); };
+                    img.src = localDB.drawings[`s${id}`];
+                }
+            });
+            
+            const feed = document.getElementById('liveFeed');
+            if(feed) {
+                feed.innerHTML = "";
+                Object.keys(localDB.feed).forEach(key => {
+                    const m = localDB.feed[key];
+                    feed.innerHTML += `<div class="mutation-card"><strong>${m.user}:</strong> ${m.text}</div>`;
+                });
+            }
+        }
+
+        function resizeCanvas(id) {
+            const c = document.getElementById(`canvas-${id}`);
+            c.width = c.parentElement.clientWidth;
+            c.height = c.parentElement.clientHeight;
+            const ctx = c.getContext('2d');
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.strokeStyle = '#d32f2f';
+            setupSync(); // Teken opnieuw na resize
+        }
+    </script>
+</body>
+</html>
